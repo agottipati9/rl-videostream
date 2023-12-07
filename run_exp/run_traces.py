@@ -16,7 +16,7 @@ def main():
 	process_id = sys.argv[3]
 	ip = sys.argv[4]
 
-	sleep_vec = range(1, 10)  # random sleep second
+	sleep_vec = np.arange(1, 10)  # random sleep second
 
 	files = os.listdir(trace_path)
 	for f in files:
@@ -25,7 +25,6 @@ def main():
 
 			np.random.shuffle(sleep_vec)
 			sleep_time = sleep_vec[int(process_id)]
-			
 			proc = subprocess.Popen('mm-delay ' + str(MM_DELAY) + 
 					  ' mm-link 12mbps ' + trace_path + f + ' ' +
 					  '/usr/bin/python ' + RUN_SCRIPT + ' ' + ip + ' ' +
@@ -39,8 +38,8 @@ def main():
 				break
 			else:
 				with open('./chrome_retry_log', 'ab') as log:
-					log.write(abr_algo + '_' + f + '\n')
-					log.write(out + '\n')
+					log.write((abr_algo + '_' + f + '\n').encode())
+					log.write((out + '\n').encode())
 					log.flush()
 
 

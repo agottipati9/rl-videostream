@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import SocketServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import base64
 import urllib
 import sys
@@ -38,7 +37,7 @@ def make_request_handler(input_dict):
             content_length = int(self.headers['Content-Length'])
             post_data = json.loads(self.rfile.read(content_length))
             
-            print post_data
+            print(post_data)
             send_data = ""
 
             if ( 'lastquality' in post_data ):
@@ -55,13 +54,13 @@ def make_request_handler(input_dict):
                 video_chunk_size = post_data['lastChunkSize']
                 
                 # log wall_time, bit_rate, buffer_size, rebuffer_time, video_chunk_size, download_time, reward
-                self.log_file.write(str(time.time()) + '\t' +
+                self.log_file.write((str(time.time()) + '\t' +
                                     str(VIDEO_BIT_RATE[post_data['lastquality']]) + '\t' +
                                     str(post_data['buffer']) + '\t' +
                                     str(float(post_data['RebufferTime'] - self.input_dict['last_total_rebuf']) / M_IN_K) + '\t' +
                                     str(video_chunk_size) + '\t' +
                                     str(video_chunk_fetch_time) + '\t' +
-                                    str(reward) + '\n')
+                                    str(reward) + '\n').encode())
                 self.log_file.flush()
 
                 self.input_dict['last_total_rebuf'] = post_data['RebufferTime']
@@ -71,23 +70,23 @@ def make_request_handler(input_dict):
                     send_data = "REFRESH"
                     self.input_dict['last_total_rebuf'] = 0
                     self.input_dict['last_bit_rate'] = DEFAULT_QUALITY
-                    self.log_file.write('\n')  # so that in the log we know where video ends
+                    self.log_file.write(b'\n')  # so that in the log we know where video ends
 
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.send_header('Content-Length', len(send_data))
             self.send_header('Access-Control-Allow-Origin', "*")
             self.end_headers()
-            self.wfile.write(send_data)
+            self.wfile.write(send_data.encode())
 
         def do_GET(self):
-            print >> sys.stderr, 'GOT REQ'
+            print('GOT REQ')
             self.send_response(200)
             #self.send_header('Cache-Control', 'Cache-Control: no-cache, no-store, must-revalidate max-age=0')
             self.send_header('Cache-Control', 'max-age=3000')
             self.send_header('Content-Length', 20)
             self.end_headers()
-            self.wfile.write("console.log('here');")
+            self.wfile.write(b"console.log('here');")
 
         def log_message(self, format, *args):
             return
@@ -112,7 +111,7 @@ def run(server_class=HTTPServer, port=8333, log_file_path=LOG_FILE):
 
         server_address = ('localhost', port)
         httpd = server_class(server_address, handler_class)
-        print 'Listening on port ' + str(port)
+        print('Listening on port ' + str(port))
         httpd.serve_forever()
 
 
