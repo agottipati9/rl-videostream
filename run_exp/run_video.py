@@ -10,6 +10,8 @@ from selenium.common.exceptions import TimeoutException
 from pyvirtualdisplay import Display
 from time import sleep
 
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 # TO RUN: download https://pypi.python.org/packages/source/s/selenium/selenium-2.39.0.tar.gz
 # run sudo apt-get install python-setuptools
 # run sudo apt-get install xvfb
@@ -37,6 +39,7 @@ sleep(int(sleep_time))
 	
 # generate url
 url = 'http://' + ip + '/' + 'myindex_' + abr_algo + '.html'
+# url = 'http://localhost:8333'  # DEBUG TEST QUERYING LOCALHOST
 
 # timeout signal
 signal.signal(signal.SIGALRM, timeout_handler)
@@ -50,17 +53,17 @@ try:
 	os.system('cp -r ' + default_chrome_user_dir + ' ' + chrome_user_dir)
 	
 	# start abr algorithm server
-	# if abr_algo == 'RL':
-	# 	command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/rl_server_no_training.py ' + trace_file
-	# elif abr_algo == 'fastMPC':
-	# 	command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/mpc_server.py ' + trace_file
-	# elif abr_algo == 'robustMPC':
-	# 	command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/robust_mpc_server.py ' + trace_file
-	# else:
-	# 	command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/simple_server.py ' + abr_algo + ' ' + trace_file
+	if abr_algo == 'RL':
+		command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/rl_server_no_training.py ' + trace_file
+	elif abr_algo == 'fastMPC':
+		command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/mpc_server.py ' + trace_file
+	elif abr_algo == 'robustMPC':
+		command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/robust_mpc_server.py ' + trace_file
+	else:
+		command = 'exec /usr/bin/python /home/silver/Desktop/rl-videostream/rl_server/simple_server.py ' + abr_algo + ' ' + trace_file
 	
-	# proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-	# sleep(2)
+	proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	sleep(2)
 	
 	# to not display the page in browser
 	display = Display(visible=0, size=(800,600))
@@ -68,12 +71,18 @@ try:
 
 	print('initalizing chrome driver')
 	
+	# add logging
+	d = DesiredCapabilities.CHROME
+	d['goog:loggingPrefs'] = { 'browser':'ALL' }
+
 	# initialize chrome driver
 	options=Options()
 	chrome_driver = '/home/silver/Desktop/rl-videostream/abr_browser_dir/chromedriver'
 	options.add_argument('--user-data-dir=' + chrome_user_dir)
+	options.add_argument('--disable-web-security')
 	options.add_argument('--ignore-certificate-errors')
-	driver=webdriver.Chrome(chrome_driver, chrome_options=options)
+	options.add_argument('--autoplay-policy=no-user-gesture-required')
+	driver=webdriver.Chrome(chrome_driver, chrome_options=options, desired_capabilities=d)
 
 	print('initalized chrome driver')
 	
@@ -81,15 +90,25 @@ try:
 	driver.set_page_load_timeout(10)
 	driver.get(url)
 
-	print('fetched url')
+	print(f'fetched url: {url}')
+
+	# After fetching the URL or at any point where you want to take the screenshot
+	# driver.save_screenshot('./results/start.png')
+
+	# print messages
+	# for entry in driver.get_log('browser'):
+	# 	print(entry)
 	
 	sleep(run_time)
 	
+	# After fetching the URL or at any point where you want to take the screenshot
+	# driver.save_screenshot('./results/end.png')
+
 	driver.quit()
 	display.stop()
 	
 	# kill abr algorithm server
-	# proc.send_signal(signal.SIGINT)
+	proc.send_signal(signal.SIGINT)
 	
 	print('done')
 	
@@ -102,10 +121,10 @@ except Exception as e:
 		driver.quit()
 	except:
 		pass
-	# try:
-	# 	proc.send_signal(signal.SIGINT)
-	# except:
-	# 	pass
+	try:
+		proc.send_signal(signal.SIGINT)
+	except:
+		pass
 	
 	print(e	)
 

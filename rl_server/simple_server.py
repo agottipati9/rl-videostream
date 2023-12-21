@@ -100,7 +100,6 @@ def run(server_class=HTTPServer, port=8333, log_file_path=LOG_FILE):
         os.makedirs(SUMMARY_DIR)
 
     with open(log_file_path, 'wb') as log_file:
-
         last_bit_rate = DEFAULT_QUALITY
         last_total_rebuf = 0 
         input_dict = {'log_file': log_file,
@@ -109,7 +108,8 @@ def run(server_class=HTTPServer, port=8333, log_file_path=LOG_FILE):
 
         handler_class = make_request_handler(input_dict=input_dict)
 
-        server_address = ('localhost', port)
+        # server_address = ('localhost', port)
+        server_address = ('0.0.0.0', port)
         httpd = server_class(server_address, handler_class)
         print('Listening on port ' + str(port))
         httpd.serve_forever()
